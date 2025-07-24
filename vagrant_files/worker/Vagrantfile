@@ -2,12 +2,8 @@ Vagrant.configure("2") do |config|
     config.vm.box = "debian/bookworm64"
     config.vm.box_version = "12.20250126.1"
   nodes = [
-    { name: "k8s-control-plane-01", ip: "172.20.20.11" },
-    { name: "k8s-control-plane-02", ip: "172.20.20.12" },
-    { name: "k8s-control-plane-03", ip: "172.20.20.13" },
     { name: "k8s-worker-01", ip: "172.20.20.21" },
     { name: "k8s-worker-02", ip: "172.20.20.22" }
-
   ]
 
   nodes.each do |node|
@@ -17,11 +13,11 @@ Vagrant.configure("2") do |config|
       vm.vm.network "private_network", ip: node[:ip]
 
       vm.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 1024
+        libvirt.memory = 2048
         libvirt.cpus = 1
 
         # Create disk storage
-        libvirt.storage :file, size: '10G', name: "#{node[:name]}-disk.qcow2", type: 'qcow2'
+        libvirt.storage :file, size: '20G', name: "#{node[:name]}-disk.qcow2", type: 'qcow2'
 
         # Set boot order: cdrom first, then disk
         libvirt.boot 'cdrom'
@@ -41,11 +37,15 @@ Vagrant.configure("2") do |config|
         chmod 700 /home/ansible/.ssh
         chmod 600 /home/ansible/.ssh/authorized_keys
 
+        # Add your public key here
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDnCjcAR7m3l569wqt3YgTzX5VrH6XPOo8yt4QzmAf0M sajjad.hassanzadeh@abrnoc.com" >> /home/ansible/.ssh/authorized_keys
+
+        cp /home/ansible/.ssh/authorized_keys /root/.ssh/
+
         echo "127.0.0.1   localhost" > /etc/hosts
         echo "#{node[:ip]}   #{node[:name]}" >> /etc/hosts
-        echo "172.20.20.11  k8s-control-plane-01" >> /etc/hosts
-        echo "172.20.20.12  k8s-control-plane-02" >> /etc/hosts
-        echo "172.20.20.13  k8s-control-plane-03" >> /etc/hosts
+        echo "172.20.20.21  k8s-worker-01" >> /etc/hosts
+        echo "172.20.20.22  k8s-worker-02" >> /etc/hosts
       SHELL
     end
   end
